@@ -1,43 +1,43 @@
 package de.tekup.springcloud.productservice.service.serviceImpl;
 
-import de.tekup.springcloud.productservice.entity.Product;
+import de.tekup.springcloud.productservice.dto.ProductRequestDTO;
+import de.tekup.springcloud.productservice.dto.ProductResponseDTO;
+import de.tekup.springcloud.productservice.exception.ProductServiceBusinessException;
 import de.tekup.springcloud.productservice.repository.ProductRepository;
+import de.tekup.springcloud.productservice.service.ProductServiceInterface;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @AllArgsConstructor
-public class ProductService {
+public class ProductService implements ProductServiceInterface {
 
     private final ProductRepository productRepository;
-
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    
+    @Override
+    public List<ProductResponseDTO> getProducts() throws ProductServiceBusinessException {
+        return null;
     }
-
-    public Optional<Product> getProductById(Long id) {
-        return productRepository.findById(id);
+    
+    @Override
+    public ProductResponseDTO getProductById(Long id) throws ProductServiceBusinessException {
+        return null;
     }
-
-    public Product createProduct(Product product) {
-        return productRepository.save(product);
+    
+    @Override
+    public ProductResponseDTO createProduct(ProductRequestDTO productRequestDTO) {
+        return null;
     }
-
-    public Product updateProduct(Long id, Product product) {
-        Optional<Product> optionalProduct = productRepository.findById(id);
-
-        if (optionalProduct.isPresent()) {
-            product.setId(id);
-            return productRepository.save(product);
-        } else {
-            return null;
-        }
+    
+    @Override
+    public ProductResponseDTO updateProduct(Long id, ProductRequestDTO updatedProduct) throws ProductServiceBusinessException {
+        return null;
     }
-
+    
+    @Override
     public void deleteProduct(Long id) {
-        productRepository.deleteById(id);
+    
     }
 }
