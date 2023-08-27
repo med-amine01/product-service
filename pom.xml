@@ -18,8 +18,7 @@
     </properties>
     <dependencies>
 
-        <!-- https://mvnrepository.com/artifact/io.springfox/springfox-boot-starter -->
-        <!--        http://localhost:8081/swagger-ui/index.html             -->
+        <!--        http://localhost:9090/swagger-ui/index.html             -->
         <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-boot-starter</artifactId>
