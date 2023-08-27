@@ -21,6 +21,7 @@ public class ValueMapper {
         product.setName(productRequestDTO.getName());
         product.setDescription(productRequestDTO.getDescription());
         product.setPrice(productRequestDTO.getPrice());
+        product.setCouponCode(productRequestDTO.getCouponCode());
         
         return product;
     }
@@ -31,6 +32,7 @@ public class ValueMapper {
         productResponseDTO.setName(product.getName());
         productResponseDTO.setDescription(product.getDescription());
         productResponseDTO.setPrice(product.getPrice());
+        productResponseDTO.setCouponCode(product.getCouponCode());
         productResponseDTO.setCreatedAt(product.getCreatedAt());
         productResponseDTO.setUpdatedAt(product.getUpdatedAt());
         

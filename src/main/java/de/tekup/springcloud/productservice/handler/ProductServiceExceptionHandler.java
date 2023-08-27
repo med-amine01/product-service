@@ -2,6 +2,7 @@ package de.tekup.springcloud.productservice.handler;
 
 import de.tekup.springcloud.productservice.dto.APIResponse;
 import de.tekup.springcloud.productservice.dto.ErrorDTO;
+import de.tekup.springcloud.productservice.exception.MicroserviceInvalidResponseException;
 import de.tekup.springcloud.productservice.exception.ProductAlreadyExistsException;
 import de.tekup.springcloud.productservice.exception.ProductNotFoundException;
 import de.tekup.springcloud.productservice.exception.ProductServiceBusinessException;
@@ -34,7 +35,7 @@ public class ProductServiceExceptionHandler {
                 });
         serviceResponse.setStatus(FAILED);
         serviceResponse.setErrors(errors);
-
+        
         return serviceResponse;
     }
     
@@ -44,24 +45,37 @@ public class ProductServiceExceptionHandler {
         APIResponse<?> serviceResponse = new APIResponse<>();
         serviceResponse.setStatus(FAILED);
         serviceResponse.setErrors(Collections.singletonList(new ErrorDTO("", exception.getMessage())));
+        
         return serviceResponse;
     }
     
-    // Business Product service exception handler
+    // Product Already Exists exception handler
     @ExceptionHandler(ProductAlreadyExistsException.class)
     public APIResponse<?> handleProductAlreadyExistsException(ProductAlreadyExistsException exception) {
         APIResponse<?> serviceResponse = new APIResponse<>();
         serviceResponse.setStatus(FAILED);
         serviceResponse.setErrors(Collections.singletonList(new ErrorDTO("", exception.getMessage())));
+        
         return serviceResponse;
     }
     
-    // Business Product service exception handler
+    // Product Not Found exception handler
     @ExceptionHandler(ProductNotFoundException.class)
     public APIResponse<?> handleProductNotFoundException(ProductNotFoundException exception) {
         APIResponse<?> serviceResponse = new APIResponse<>();
         serviceResponse.setStatus(FAILED);
         serviceResponse.setErrors(Collections.singletonList(new ErrorDTO("", exception.getMessage())));
+        
+        return serviceResponse;
+    }
+    
+    // Business Product service exception handler
+    @ExceptionHandler(MicroserviceInvalidResponseException.class)
+    public APIResponse<?> handleMicroserviceInvalidResponseException(MicroserviceInvalidResponseException exception) {
+        APIResponse<?> serviceResponse = new APIResponse<>();
+        serviceResponse.setStatus(FAILED);
+        serviceResponse.setErrors(Collections.singletonList(new ErrorDTO("", exception.getMessage())));
+        
         return serviceResponse;
     }
 }

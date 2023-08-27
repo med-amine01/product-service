@@ -21,5 +21,9 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ANT_PATH_MATCHER
+
 server:
-  port: 8081
+  port: 9090
+
+coupon-service:
+  url: "http://localhost:9091/api/v1/coupons"

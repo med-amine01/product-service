@@ -1,26 +1,39 @@
 package de.tekup.springcloud.productservice.service.serviceImpl;
 
+import de.tekup.springcloud.productservice.dto.APIResponse;
+import de.tekup.springcloud.productservice.dto.CouponResponse;
 import de.tekup.springcloud.productservice.dto.ProductRequestDTO;
 import de.tekup.springcloud.productservice.dto.ProductResponseDTO;
 import de.tekup.springcloud.productservice.entity.Product;
+import de.tekup.springcloud.productservice.exception.MicroserviceInvalidResponseException;
 import de.tekup.springcloud.productservice.exception.ProductAlreadyExistsException;
 import de.tekup.springcloud.productservice.exception.ProductNotFoundException;
 import de.tekup.springcloud.productservice.exception.ProductServiceBusinessException;
 import de.tekup.springcloud.productservice.repository.ProductRepository;
 import de.tekup.springcloud.productservice.service.ProductServiceInterface;
 import de.tekup.springcloud.productservice.util.ValueMapper;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class ProductService implements ProductServiceInterface {
     
-    private ProductRepository productRepository;
+    private final ProductRepository productRepository;
+
+    private final RestTemplate restTemplate;
+
+    @Value("${coupon-service.url}")
+    private String couponServiceURL;
     
     @Override
     public List<ProductResponseDTO> getProducts() throws ProductServiceBusinessException {
@@ -77,8 +90,34 @@ public class ProductService implements ProductServiceInterface {
             if (productRepository.existsByName(productRequestDTO.getName())) {
                 throw new ProductAlreadyExistsException("Product with name " + productRequestDTO.getName() + " already exists");
             }
-            
+
             Product product = ValueMapper.convertToEntity(productRequestDTO);
+            
+            // Retrieving coupon from coupon-service and map it to APIResponse
+            ResponseEntity<APIResponse<CouponResponse>> responseEntity = restTemplate.exchange(
+                    couponServiceURL + "/code/" + productRequestDTO.getCouponCode(),
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<>() {
+                    });
+            
+            APIResponse<CouponResponse> apiResponse = responseEntity.getBody();
+            
+            if (apiResponse.getStatus().equals("FAILED")) {
+                if (!apiResponse.getErrors().isEmpty()) {
+                    String errorDetails = apiResponse.getErrors().get(0).getErrorMessage();
+                    
+                    throw new MicroserviceInvalidResponseException(errorDetails);
+                }
+                throw new MicroserviceInvalidResponseException("Unknown error occurred.");
+            }
+
+            
+            CouponResponse coupon = apiResponse.getResults();
+            // Applying discount
+            product.setPrice(productRequestDTO.getPrice().subtract(coupon.getDiscount()));
+            
+            // Saving product
             Product persistedProduct = productRepository.save(product);
             
             ProductResponseDTO productResponseDTO = ValueMapper.convertToProductResponseDto(persistedProduct);
@@ -86,6 +125,10 @@ public class ProductService implements ProductServiceInterface {
             
             log.info("ProductService::createProduct - ENDS.");
             return productResponseDTO;
+            
+        } catch (MicroserviceInvalidResponseException exception) {
+            log.error(exception.getMessage());
+            throw exception;
             
         } catch (ProductAlreadyExistsException exception) {
             log.error(exception.getMessage());

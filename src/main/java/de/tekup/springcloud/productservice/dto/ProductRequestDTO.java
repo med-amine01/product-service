@@ -26,4 +26,7 @@ public class ProductRequestDTO {
     @NotNull(message = "Price amount is required")
     @Positive(message = "Price amount must be positive")
     private BigDecimal price;
+    
+    @Size(min = 2, message = "Coupon Code should have at least 2 characters")
+    private String couponCode;
 }
