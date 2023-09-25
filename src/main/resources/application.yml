@@ -26,4 +26,4 @@ server:
   port: 9090
 
 coupon-service:
-  url: "http://coupon-app:9091/api/v1/coupons"
+  url: "http://coupon-service:9091/api/v1/coupons"

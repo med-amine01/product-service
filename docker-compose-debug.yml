@@ -1,0 +1,52 @@
+version: '3'
+networks:
+  mynetwork:
+    driver: bridge
+
+services:
+  product-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: product-service
+    image: product-service
+    ports:
+      - 10666:9090 # App port
+      - 5005:5005 # Debug port
+    depends_on:
+      docker-mysql:
+        condition: service_healthy
+      coupon-service:
+        condition: service_healthy
+    environment:
+      - WAIT_HOSTS=docker-mysql:3306
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+    volumes:
+      - ./target/:/app/target
+
+  coupon-service:
+    container_name: coupon-service
+    image: madchicken98/coupon-service
+    restart: on-failure
+    ports:
+      - 10555:9090
+    depends_on:
+      docker-mysql:
+        condition: service_healthy
+    environment:
+      - WAIT_HOSTS=docker-mysql:3306
+
+  docker-mysql:
+    container_name: docker-mysql
+    image: mysql
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=Mad123**
+      - MYSQL_ROOT_HOST=%
+    ports:
+      - 6666:3306
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 4s
+      timeout: 20s
+      retries: 3

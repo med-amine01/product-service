@@ -83,7 +83,7 @@ public class ProductService implements ProductServiceInterface {
     }
     
     @Override
-    public ProductResponseDTO createProduct(ProductRequestDTO productRequestDTO) {
+    public ProductResponseDTO createProduct(ProductRequestDTO productRequestDTO) throws ProductServiceBusinessException {
         try {
             log.info("ProductService::createProduct - STARTED.");
             
@@ -101,19 +101,9 @@ public class ProductService implements ProductServiceInterface {
                     new ParameterizedTypeReference<>() {
                     });
             
-            APIResponse<CouponResponse> apiResponse = responseEntity.getBody();
+            //Getting coupon code from coupon-service
+            CouponResponse coupon = getCouponCode(responseEntity);
             
-            if (apiResponse.getStatus().equals("FAILED")) {
-                if (!apiResponse.getErrors().isEmpty()) {
-                    String errorDetails = apiResponse.getErrors().get(0).getErrorMessage();
-                    
-                    throw new MicroserviceInvalidResponseException(errorDetails);
-                }
-                throw new MicroserviceInvalidResponseException("Unknown error occurred.");
-            }
-
-            
-            CouponResponse coupon = apiResponse.getResults();
             // Applying discount
             product.setPrice(productRequestDTO.getPrice().subtract(coupon.getDiscount()));
             
@@ -192,5 +182,22 @@ public class ProductService implements ProductServiceInterface {
         }
         
         log.info("ProductService::deleteProduct - Ends.");
+    }
+    
+    private CouponResponse getCouponCode(ResponseEntity<APIResponse<CouponResponse>> responseEntity) {
+        APIResponse<CouponResponse> apiResponse = responseEntity.getBody();
+        
+        assert apiResponse != null;
+        if (apiResponse.getStatus().equals("FAILED")) {
+            if (!apiResponse.getErrors().isEmpty()) {
+                String errorDetails = apiResponse.getErrors().get(0).getErrorMessage();
+                
+                throw new MicroserviceInvalidResponseException(errorDetails);
+            }
+            throw new MicroserviceInvalidResponseException("Unknown error occurred.");
+        }
+        
+        
+        return apiResponse.getResults();
     }
 }
