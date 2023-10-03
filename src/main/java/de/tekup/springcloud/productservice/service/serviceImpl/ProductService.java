@@ -31,9 +31,9 @@ public class ProductService implements ProductServiceInterface {
     private final ProductRepository productRepository;
 
     private final RestTemplate restTemplate;
-
-    @Value("${coupon-service.url}")
-    private String couponServiceURL;
+    
+    @Value("${microservices.coupon-service.endpoints.endpoint.uri}")
+    private String COUPON_SERVICE_URL;
     
     @Override
     public List<ProductResponseDTO> getProducts() throws ProductServiceBusinessException {
@@ -95,7 +95,7 @@ public class ProductService implements ProductServiceInterface {
             
             // Retrieving coupon from coupon-service and map it to APIResponse
             ResponseEntity<APIResponse<CouponResponse>> responseEntity = restTemplate.exchange(
-                    couponServiceURL + "/code/" + productRequestDTO.getCouponCode(),
+                    COUPON_SERVICE_URL + "/code/" + productRequestDTO.getCouponCode(),
                     HttpMethod.GET,
                     null,
                     new ParameterizedTypeReference<>() {

@@ -1,39 +1,7 @@
 version: '3'
-networks:
-  mynetwork:
-    driver: bridge
 
 services:
-  product-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: product-service
-    image: product-service
-    ports:
-      - 10666:9090
-    depends_on:
-      docker-mysql:
-        condition: service_healthy
-      coupon-service:
-        condition: service_started
-    environment:
-      - WAIT_HOSTS=docker-mysql:3306
-    volumes:
-      - ./target/:/app/target
-
-  coupon-service:
-    container_name: coupon-service
-    image: madchicken98/coupon-service
-    restart: on-failure
-    ports:
-      - 10555:9091
-    depends_on:
-      docker-mysql:
-        condition: service_healthy
-    environment:
-      - WAIT_HOSTS=docker-mysql:3306
-
+  # Mysql db
   docker-mysql:
     container_name: docker-mysql
     image: mysql
@@ -41,10 +9,103 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=Mad123**
       - MYSQL_ROOT_HOST=%
+    networks:
+      - my-network
     ports:
-      - 6666:3306
+      - "6666:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
       interval: 4s
       timeout: 20s
       retries: 3
+
+  # Eureka server
+  discovery-server:
+    container_name: discovery-server
+    image: madchicken98/discovery-server
+    ports:
+      - "8761:8761"
+    networks:
+      - my-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Config server
+  config-server:
+    container_name: config-server
+    image: madchicken98/config-server
+    ports:
+      - "8888:8888"
+    networks:
+      - my-network
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Api gateway
+  api-gateway:
+    container_name: api-gateway
+    image: madchicken98/api-gateway
+    restart: on-failure
+    networks:
+      - my-network
+    ports:
+      - "8765:8765"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      product-service:
+        condition: service_started
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+
+  # Coupon service
+  coupon-service:
+    container_name: coupon-service
+    image: madchicken98/coupon-service
+    restart: on-failure
+    networks:
+      - my-network
+    ports:
+      - "9091:9091"
+    depends_on:
+      docker-mysql:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    environment:
+      - WAIT_HOSTS=docker-mysql:3306
+
+  # Product service
+  product-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: product-service
+    image: product-service
+    networks:
+      - my-network
+    ports:
+      - "9090:9090"
+    depends_on:
+      coupon-service:
+        condition: service_started
+    environment:
+      - WAIT_HOSTS=docker-mysql:3306
+    volumes:
+      - ./target/:/app/target
+
+networks:
+  my-network:
+    driver: bridge

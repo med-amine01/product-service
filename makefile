@@ -33,7 +33,10 @@ start:
 	@echo ""
 	@echo "PRODUCT-SERVICE STARTED !"
 
-
+# Restart 'coupon-service' Docker container (depends on purge-containers)
+.PHONY: restart
+restart: purge-containers start
+	@echo "\nPRODUCT-SERVICE RESTARTED !"
 
 # Start Docker containers using docker-compose
 .PHONY: start-debug
